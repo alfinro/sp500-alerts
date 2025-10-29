@@ -1,42 +1,37 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#111"/>
-  <title>SP500 Alerts</title>
-  <script src="/socket.io/socket.io.js"></script>
-</head>
-<body style="background:#111;color:#fff;font-family:sans-serif;padding:2rem">
-  <h1>📈 Monitor SP500 & VIX</h1>
-  <p>Status: <span id="status">Aștept alerte...</span></p>
-  <ul id="alerts"></ul>
-  <audio id="sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js');
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#000000"/>
+  <link rel="manifest" href="manifest.json" />
+  <title>📈 Monitor SP500 & VIX</title>
+  <style>
+    body {
+      background: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 50px;
     }
-
-    const socket = io();
-    const alertsEl = document.getElementById('alerts');
-    const sound = document.getElementById('sound');
-
-    socket.on('alert', data => {
-      const li = document.createElement('li');
-      li.textContent = `${data.name}: ${data.change}% în ${data.period} (${data.time})`;
-      alertsEl.prepend(li);
-      sound.play().catch(() => {});
-      if (Notification.permission === 'granted') {
-        new Notification(`${data.name} ALERT`, {
-          body: `${data.change}% în ${data.period}`,
-        });
-      }
-    });
-
-    if (Notification.permission !== 'granted') {
-      Notification.requestPermission();
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>📈 Monitor SP500 & VIX</h1>
+  <p>Status: Aștept alerte...</p>
+  <button onclick="requestNotificationPermission()">Permite Notificări 🔔</button>
+  <script>
+    function requestNotificationPermission() {
+      Notification.requestPermission().then(function(result) {
+        alert('Permisiune notificări: ' + result);
+      });
     }
   </script>
 </body>
