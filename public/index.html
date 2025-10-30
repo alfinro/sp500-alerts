@@ -4,35 +4,59 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="theme-color" content="#000000"/>
-  <link rel="manifest" href="manifest.json" />
-  <title>📈 Monitor SP500 & VIX</title>
+  <title>📈 Monitor Alerte Financiare</title>
   <style>
-    body {
-      background: #111;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding-top: 50px;
-    }
-    button {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
+    body { background: #111; color: #fff; font-family: sans-serif; padding: 20px; text-align: center; }
+    input, button { margin: 5px; padding: 10px; font-size: 16px; }
   </style>
 </head>
 <body>
-  <h1>📈 Monitor SP500 & VIX</h1>
-  <p>Status: Aștept alerte...</p>
-  <button onclick="requestNotificationPermission()">Permite Notificări 🔔</button>
+  <h1>📈 Monitor Alerte Financiare</h1>
+
+  <div>
+    <p>🔔 Permite notificări:</p>
+    <button onclick="requestNotificationPermission()">Permite Notificări 🔔</button>
+  </div>
+
+  <div style="margin-top:20px;">
+    <p>📊 Praguri pentru alerte (%)</p>
+    <label>15m: <input type="number" id="threshold15m" step="0.01" value="0.1"></label><br>
+    <label>30m: <input type="number" id="threshold30m" step="0.01" value="0.11"></label><br>
+    <label>1h: <input type="number" id="threshold1h" step="0.01" value="0.2"></label><br>
+    <label>1d: <input type="number" id="threshold1d" step="0.01" value="2.5"></label><br>
+    <button onclick="saveThresholds()">Salvează Praguri</button>
+  </div>
+
+  <audio id="alertSound" src="alert.mp3" preload="auto"></audio>
+
   <script>
     function requestNotificationPermission() {
-      Notification.requestPermission().then(function(result) {
+      Notification.requestPermission().then(result => {
         alert('Permisiune notificări: ' + result);
       });
     }
+
+    function saveThresholds() {
+      const thresholds = {
+        '15m': parseFloat(document.getElementById("threshold15m").value),
+        '30m': parseFloat(document.getElementById("threshold30m").value),
+        '1h': parseFloat(document.getElementById("threshold1h").value),
+        '1d': parseFloat(document.getElementById("threshold1d").value)
+      };
+      localStorage.setItem("thresholds", JSON.stringify(thresholds));
+      alert("Praguri salvate!");
+    }
+
+    setTimeout(() => {
+      const alertSound = document.getElementById("alertSound");
+      if (Notification.permission === "granted") {
+        new Notification("Alertă SP500", {
+          body: "📉 -0.25% în 15m",
+          icon: "🔔"
+        });
+        alertSound.play().catch(() => {});
+      }
+    }, 5000);
   </script>
 </body>
 </html>
