@@ -1,62 +1,71 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📈 Monitor Alerte Financiare</title>
+  <title>📈 Monitor Financiar</title>
   <style>
-    body { background: #111; color: #fff; font-family: sans-serif; padding: 20px; text-align: center; }
-    input, button { margin: 5px; padding: 10px; font-size: 16px; }
+    body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; }
+    h1 { text-align: center; }
+    .instrument { margin: 15px 0; font-size: 1.3em; }
+    .alert { background: #ff0; color: #000; padding: 10px; font-weight: bold; margin-top: 10px; display: none; }
+    label, input { display: block; margin-top: 10px; }
+    input { padding: 6px; width: 100px; }
+    .config { margin-bottom: 20px; }
   </style>
 </head>
 <body>
-  <h1>📈 Monitor Alerte Financiare</h1>
+  <h1>📈 Monitor BTC cu Alertă</h1>
 
-  <div>
-    <p>🔔 Permite notificări:</p>
-    <button onclick="requestNotificationPermission()">Permite Notificări 🔔</button>
+  <div class="config">
+    <label for="threshold">Prag alertă % (ex: 0.5):</label>
+    <input type="number" id="threshold" value="0.5" step="0.1" />
   </div>
 
-  <div style="margin-top:20px;">
-    <p>📊 Praguri pentru alerte (%)</p>
-    <label>15m: <input type="number" id="threshold15m" step="0.01" value="0.1"></label><br>
-    <label>30m: <input type="number" id="threshold30m" step="0.01" value="0.11"></label><br>
-    <label>1h: <input type="number" id="threshold1h" step="0.01" value="0.2"></label><br>
-    <label>1d: <input type="number" id="threshold1d" step="0.01" value="2.5"></label><br>
-    <button onclick="saveThresholds()">Salvează Praguri</button>
-  </div>
+  <div class="instrument" id="btc">BTC: încărcare...</div>
+  <div id="alert" class="alert">⚠️ ALERTĂ BTC! Depășit pragul!</div>
 
-  <audio id="alertSound" src="alert.mp3" preload="auto"></audio>
+  <audio id="alert-sound" src="alert.mp3" preload="auto"></audio>
 
   <script>
-    function requestNotificationPermission() {
-      Notification.requestPermission().then(result => {
-        alert('Permisiune notificări: ' + result);
-      });
-    }
+    let previousPrice = null;
+    let threshold = parseFloat(document.getElementById("threshold").value);
 
-    function saveThresholds() {
-      const thresholds = {
-        '15m': parseFloat(document.getElementById("threshold15m").value),
-        '30m': parseFloat(document.getElementById("threshold30m").value),
-        '1h': parseFloat(document.getElementById("threshold1h").value),
-        '1d': parseFloat(document.getElementById("threshold1d").value)
-      };
-      localStorage.setItem("thresholds", JSON.stringify(thresholds));
-      alert("Praguri salvate!");
-    }
+    document.getElementById("threshold").addEventListener("input", () => {
+      threshold = parseFloat(document.getElementById("threshold").value);
+    });
 
-    setTimeout(() => {
-      const alertSound = document.getElementById("alertSound");
-      if (Notification.permission === "granted") {
-        new Notification("Alertă SP500", {
-          body: "📉 -0.25% în 15m",
-          icon: "🔔"
-        });
-        alertSound.play().catch(() => {});
+    async function fetchBTC() {
+      try {
+        const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd");
+        const data = await res.json();
+        const price = data.bitcoin.usd;
+
+        const display = document.getElementById("btc");
+        display.textContent = `BTC: $${price.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+
+        if (previousPrice !== null) {
+          const diff = ((price - previousPrice) / previousPrice) * 100;
+          if (Math.abs(diff) >= threshold) {
+            showAlert();
+          }
+        }
+
+        previousPrice = price;
+      } catch (e) {
+        document.getElementById("btc").textContent = "BTC: eroare...";
       }
-    }, 5000);
+    }
+
+    function showAlert() {
+      const alertBox = document.getElementById("alert");
+      alertBox.style.display = "block";
+      const audio = document.getElementById("alert-sound");
+      audio.play().catch(() => {});
+    }
+
+    fetchBTC();
+    setInterval(fetchBTC, 30000);
   </script>
 </body>
 </html>
