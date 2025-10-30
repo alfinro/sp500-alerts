@@ -3,27 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>📈 Monitor Financiar</title>
+  <title>📈 Monitor BTC + Alertă</title>
   <style>
-    body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; }
+    body { background: #0a0a0a; color: #f5f5f5; font-family: sans-serif; padding: 20px; }
     h1 { text-align: center; }
-    .instrument { margin: 15px 0; font-size: 1.3em; }
-    .alert { background: #ff0; color: #000; padding: 10px; font-weight: bold; margin-top: 10px; display: none; }
+    .instrument { margin: 20px 0; font-size: 1.5em; }
+    .alert { background: yellow; color: black; padding: 12px; font-weight: bold; margin-top: 10px; display: none; }
     label, input { display: block; margin-top: 10px; }
     input { padding: 6px; width: 100px; }
-    .config { margin-bottom: 20px; }
+    .config { margin-bottom: 30px; }
   </style>
 </head>
 <body>
-  <h1>📈 Monitor BTC cu Alertă</h1>
+  <h1>📊 Monitor BTC în timp real</h1>
 
   <div class="config">
-    <label for="threshold">Prag alertă % (ex: 0.5):</label>
-    <input type="number" id="threshold" value="0.5" step="0.1" />
+    <label for="threshold">Prag alertă %:</label>
+    <input type="number" id="threshold" value="0.1" step="0.1" />
   </div>
 
   <div class="instrument" id="btc">BTC: încărcare...</div>
-  <div id="alert" class="alert">⚠️ ALERTĂ BTC! Depășit pragul!</div>
+  <div id="alert" class="alert"></div>
 
   <audio id="alert-sound" src="alert.mp3" preload="auto"></audio>
 
@@ -37,9 +37,16 @@
 
     async function fetchBTC() {
       try {
-        const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd");
-        const data = await res.json();
-        const price = data.bitcoin.usd;
+        let price = null;
+        try {
+          const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd");
+          const data = await res.json();
+          price = data.bitcoin.usd;
+        } catch {
+          const alt = await fetch("https://api.coincap.io/v2/assets/bitcoin");
+          const altData = await alt.json();
+          price = parseFloat(altData.data.priceUsd);
+        }
 
         const display = document.getElementById("btc");
         display.textContent = `BTC: $${price.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
@@ -47,18 +54,21 @@
         if (previousPrice !== null) {
           const diff = ((price - previousPrice) / previousPrice) * 100;
           if (Math.abs(diff) >= threshold) {
-            showAlert();
+            const direction = diff > 0 ? "↑" : "↓";
+            const formattedDiff = `${direction} ${Math.abs(diff).toFixed(2)}%`;
+            showAlert(`⚠️ BTC ${formattedDiff}`);
           }
         }
 
         previousPrice = price;
       } catch (e) {
-        document.getElementById("btc").textContent = "BTC: eroare...";
+        document.getElementById("btc").textContent = "BTC: eroare la preluare...";
       }
     }
 
-    function showAlert() {
+    function showAlert(message) {
       const alertBox = document.getElementById("alert");
+      alertBox.textContent = message;
       alertBox.style.display = "block";
       const audio = document.getElementById("alert-sound");
       audio.play().catch(() => {});
